@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>任务抽签</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; }
+    select, button { padding: 10px; font-size: 16px; margin: 10px 0; }
+    #result { margin-top: 20px; font-size: 18px; color: #2c7; }
+  </style>
+</head>
+<body>
+  <h2>任务抽签系统</h2>
+  <p>请选择你的姓名：</p>
+  <select id="nameSelect">
+    <option value="">-- 请选择 --</option>
+  </select>
+  <br>
+  <button onclick="draw()">抽 签</button>
+  <div id="result"></div>
+
+  <script>
+    async function loadParticipants() {
+      const res = await fetch('/api/participants');
+      const names = await res.json();
+      const sel = document.getElementById('nameSelect');
+      sel.innerHTML = '<option value="">-- 请选择 --</option>';
+      names.forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = name;
+        sel.appendChild(opt);
+      });
+    }
+
+    async function draw() {
+      const name = document.getElementById('nameSelect').value;
+      if (!name) { alert('请先选择姓名'); return; }
+
+      const res = await fetch('/api/draw', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({name})
+      });
+      const data = await res.json();
+
+      const resultDiv = document.getElementById('result');
+      if (data.error) {
+        resultDiv.innerHTML = `<span style="color:red">❌  $ {data.error}</span>`;
+      } else {
+        resultDiv.innerHTML = `🎉 <strong> $ {name}</strong>，你抽中了：<strong> $ {data.task}</strong>`;
+        loadParticipants(); // 刷新可选名单
+      }
+    }
+
+    loadParticipants();
+  </script>
+</body>
+</html>
